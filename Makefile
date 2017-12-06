@@ -9,7 +9,7 @@ NVFLAGS = $(INCDIR) $(LIBDIR) -arch=sm_30
 all: main.out
 
 main.out: helper.o simulation.o
-        @$(CPP) $(CFLAGS) main.cpp -o main.out *.o $(NVLIBS)
+        @$(CPP) $(CFLAGS) planet.hpp main.cpp -o main.out *.o $(NVLIBS)
 
 simulation.o:
         @$(NVCC) $(NVFLAGS) -c simulation.cu -o simulation.o
