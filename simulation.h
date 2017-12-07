@@ -6,11 +6,8 @@
 #include <sys/time.h>
 #include <cuda_runtime_api.h>
 #include <vector_types.h>
+#include "common.hpp"
 
-typedef struct{
-        float3 position;
-        float3 velocity;
-}Particle;
 
 double getElapsed(struct timeval t0, struct timeval t1);
 
@@ -21,9 +18,9 @@ __host__ __device__ float3 operator+(const float3 &a, const float3 &b);
 
 __host__ __device__ float3 operator*(const float &a, const float3 &b);
 
-__host__ __device__ float3 update_particle(Particle p, float dt);
+__host__ __device__ void update_particle(Particle *p, Particle *particles, float dt, int num_particles);
 
-__global__ void simulation_GPU(Particle *particles, float3 *fake_random, int n, float dt);
+__global__ void simulation_GPU(Particle *particles, int n, float dt);
 
 class Simulation
 {

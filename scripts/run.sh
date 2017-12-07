@@ -9,5 +9,5 @@ fi
 
 # Rebuild the source code and run the application
 make rebuild
-./bin/main.out
+./main.out
 

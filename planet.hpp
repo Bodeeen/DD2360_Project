@@ -1,12 +1,16 @@
+#ifndef __PLANET_HPP__
+#define __PLANET_HPP__
+
 #include <vector>
 #include <glm/vec3.hpp>
+#include "common.hpp"
 
-class planet
+class Planet
 {
 	private:
 		float origin[3] = { 0, 0, 0 };
-		std::vector<glm::vec3> silicateParticles;
-		std::vector<glm::vec3> ironParticles;
+		std::vector<Particle> silicateParticles;
+		std::vector<Particle> ironParticles;
     		float colorSilicate[4] = {0, 1, 0, 0.4};
     		float colorIron[4] = {0, 0, 1, 0.4};
 	public:
@@ -26,3 +30,5 @@ class planet
 		int getSilicateCount() { return silicateParticles.size(); } ;
 		int getIronCount() { return ironParticles.size(); };
 };
+
+#endif

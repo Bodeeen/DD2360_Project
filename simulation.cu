@@ -1,5 +1,6 @@
 #include "simulation.h"
 
+
 double getElapsed(struct timeval t0, struct timeval t1)// millisecond
 {
     return ((t1.tv_sec-t0.tv_sec) * 1000000LL + (t1.tv_usec-t0.tv_usec)) / 1000.0;
@@ -28,7 +29,7 @@ __host__ __device__ bool isIncreasing(Particle p1, Particle p2)
 
 __host__ __device__ float calculate_force(Particle p1, Particle p2)
 {
-  float r = glm::distance(p1, p2);
+  float r = glm::distance(p1.position, p2.position);
 
   if (r < eps){
     r = eps;
@@ -52,33 +53,33 @@ __host__ __device__ float calculate_force(Particle p1, Particle p2)
   }
 }
 
-__host__ __device__ void update_particle(Particle *p, Particle *particles, float dt)
+__host__ __device__ void update_particle(Particle *p, Particle *particles, float dt, int num_particles)
 {
 
-  vec3 f = (0.0);
-  vec3 a = (0.0);
+  glm::vec3 f = glm::vec3(0.0);
+  glm::vec3 a = glm::vec3(0.0);
 
-  for(i = 0; i<NUM_PARTICLES; i++)
+  for(int i = 0; i<num_particles; i++)
   {
-    f += glm::normalize(particles[i].position - p.position) * calculate_force(p, particles[i]);
+    f += glm::normalize(particles[i].position - p->position) * calculate_force(*p, particles[i]);
   }
 
-  if(p.material)
-    a = f/M_Fe;
+  if(p->material)
+    a = (1/(float)M_Fe)*f;
   else
-    a = f/M_Si;
+    a = (1/(float)M_Si)*f;
 
-  p.velocity += a*dt;
-  p.position += dt * p.velocity
+  p->velocity += a*dt;
+  p->position += dt * p->velocity;
   //return p.position + dt * p.velocity;
 }
 
-__global__ void simulation_GPU(Particle *particles, float3 *fake_random, int n, float dt)
+__global__ void simulation_GPU(Particle *particles, int n, float dt)
 {
         const int i = blockIdx.x*blockDim.x + threadIdx.x;
 
         if(i<n){
-          update_particle(particles[i], particles, dt);
+          update_particle(&particles[i], particles, dt, n);
         }
 }
 
@@ -101,7 +102,7 @@ void GPUSimulation::init()
 
   initial_particles(particles, NUM_PARTICLES);
 
-  cudaMalloc( &d_p, NUM_PARTICLES * sizeof(Particle) );
+  cudaMalloc( &d_p, NUM_PARTICLES * sizeof(Particle));
   //cudaMalloc( &d_r, NUM_PARTICLES * sizeof(float3) );
 
   printf("Start computing particles on the GPU... ");
@@ -119,7 +120,7 @@ void GPUSimulation::update()
   //checkCUDAError();
 
   gettimeofday(&t2, NULL);
-  simulation_GPU<<<(NUM_PARTICLES + BLOCK_SIZE - 1)/BLOCK_SIZE, BLOCK_SIZE>>>(d_p, d_r, NUM_PARTICLES, dt);
+  simulation_GPU<<<(NUM_PARTICLES + BLOCK_SIZE - 1)/BLOCK_SIZE, BLOCK_SIZE>>>(d_p, NUM_PARTICLES, dt);
   gettimeofday(&t3, NULL);
 
   gpu_calculating_time += getElapsed(t2,t3);
@@ -193,7 +194,7 @@ CPUSimulation::CPUSimulation(int n, int it, int size)
 void CPUSimulation::init()
 {
   particles       = (Particle*)   malloc(sizeof(Particle) * NUM_PARTICLES);
-  fake_random     = (float3*)     malloc(sizeof(float3) * NUM_PARTICLES);
+  // fake_random     = (float3*)     malloc(sizeof(float3) * NUM_PARTICLES);
 
   initial_particles(particles, NUM_PARTICLES);
   printf("Start computing particles on the CPU... ");
@@ -213,8 +214,8 @@ void CPUSimulation::simulation_CPU()
 {
   for (int i = 0; i < NUM_PARTICLES; ++i)
   {
-    particles[i].velocity = fake_random[i];
-    particles[i].position = update_particle(particles[i], dt);
+    // particles[i].velocity = fake_random[i];
+    update_particle(&particles[i], particles, dt, NUM_PARTICLES);
   }
 }
 
@@ -240,8 +241,8 @@ void initial_particles(Particle *particles, int n)
   for ( int i = 0; i < n; ++i)
   {
     t = 0.01*i;
-    particles[i].position = make_float3(t, t, t);
-    particles[i].velocity = make_float3(0.0, 0.0, 0.0);
+    particles[i].position = glm::vec3(t, t, t);
+    particles[i].velocity = glm::vec3(0.0, 0.0, 0.0);
   }
 }
 
