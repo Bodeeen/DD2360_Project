@@ -1,3 +1,6 @@
+#ifndef __COMMON_HPP__
+#define __COMMON_HPP__
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -18,7 +21,7 @@
 #define PATH_MAX    4096
 #define GL_SUCCESS  0
 
-#define D 376.78
+#define Dia 376.78
 #define M_Si 7.4161e+19
 #define M_Fe 1.9549e+20
 #define K_Si 7.2785e+10
@@ -35,10 +38,17 @@
 #define eps 47.0975
 #define time_step 5.8117
 
+#define NUM_ITERATIONS 1000000LL
+#define BLOCK_SIZE 256
+
+//float D = 376.78;
+
 typedef uint8_t BYTE;
 
 typedef struct{
         glm::vec3 position;
         glm::vec3 velocity;
         bool material; //True is iron
-}Particle;
+} Particle;
+
+#endif

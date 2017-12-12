@@ -12,13 +12,15 @@ Planet::Planet(glm::vec3 origin, glm::vec3 lin_vel, glm::vec3 ang_vel, int num_F
   std::mt19937 generator(seed);
   std::uniform_real_distribution<double> uniform01(0.0, 1.0);
 
+  std::cout << num_Si_particles << std::endl;
+  std::cout << num_Fe_particles << std::endl;
+
   for(int i=0; i<num_Si_particles; i++) {
     double theta = 2 * M_PI * uniform01(generator);
     double phi = acos(1 - 2 * uniform01(generator));
     double x = 2 * sin(phi) * cos(theta);
     double y = 2 * sin(phi) * sin(theta);
     double z = 2 * cos(phi);
-    std::cout << i << ", "<< x << "," << y << "," << z << std::endl;
 
     addSilicateParticle(x, y, z);
   }
@@ -29,7 +31,6 @@ Planet::Planet(glm::vec3 origin, glm::vec3 lin_vel, glm::vec3 ang_vel, int num_F
     double x = 1.7 * sin(phi) * cos(theta);
     double y = 1.7 * sin(phi) * sin(theta);
     double z = 1.7 * cos(phi);
-    std::cout << i << ", "<< x << "," << y << "," << z << std::endl;
 
     addIronParticle(x, y, z);
   }
