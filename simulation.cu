@@ -30,28 +30,86 @@ __host__ __device__ bool isIncreasing(Particle p1, Particle p2)
 __host__ __device__ float calculate_force(Particle p1, Particle p2)
 {
   //const float D = 376.78;
-  float r = glm::distance(p1.position, p2.position);
-
-  if (r < eps){
-    r = eps;
-  }
-  if (r<Core_D_Fe) {
-    if (isIncreasing(p1, p2)) {
-      return GMM/(r*r)-(K_Si*KRP_Si+K_Fe*KRP_Fe)*(Dia*Dia-r*r);
-    } else {
-      return GMM/(r*r)-(K_Si+K_Fe)*(Dia*Dia-r*r);
-    }
-  } else if (r < Core_D_Si) {
-    if (isIncreasing(p1, p2)) {
-      return GMM/(r*r)-(K_Si*KRP_Si+K_Fe)*(Dia*Dia-r*r);
-    } else {
-      return GMM/(r*r)-(K_Si+K_Fe)*(Dia*Dia-r*r);
-    }
-  } else if(r < Dia){
-    return GMM/(r*r)-(K_Si+K_Fe)*(Dia*Dia-r*r);
-  } else{
-    return GMM/(r*r);
-  }
+	float r = glm::distance(p1.position, p2.position);
+	if (r < eps){
+		r = eps;
+  	}
+	if(p1.material && p2.material)//Fe-Fe
+	{
+		if (r<Core_D_Fe) 
+		{
+			if (isIncreasing(p1, p2)) 
+			{
+				return GMfeMfe/(r*r)-(K_Fe*KRP_Fe)*(Dia*Dia-r*r);
+			}
+			else 
+			{
+				return GMfeMfe/(r*r)-(K_Fe)*(Dia*Dia-r*r);
+			}
+		}
+		else if(r < Dia)
+		{
+    			return GMfeMfe/(r*r)-(K_Fe)*(Dia*Dia-r*r);
+		} 
+		else
+		{
+    			return GMfeMfe/(r*r);
+		}
+	}
+	else if(!p1.material && !p2.material)//Si-Si
+	{
+		if (r<Core_D_Si) 
+		{
+			if (isIncreasing(p1, p2)) 
+			{
+				return GMsiMsi/(r*r)-(K_Si*KRP_Si)*(Dia*Dia-r*r);
+			}
+			else 
+			{
+				return GMsiMsi/(r*r)-(K_Si)*(Dia*Dia-r*r);
+			}
+		}
+		else if(r < Dia)
+		{
+    			return GMsiMsi/(r*r)-(K_Si)*(Dia*Dia-r*r);
+		}
+		else
+		{
+    			return GMsiMsi/(r*r);
+		}
+	}
+	else//Fe-Si
+	{	
+		if (r<Core_D_Fe) 
+		{
+			if (isIncreasing(p1, p2)) 
+			{
+				return GMsiMfe/(r*r)-0.5*(K_Si*KRP_Si+K_Fe*KRP_Fe)*(Dia*Dia-r*r);
+			}
+			else 
+			{
+				return GMsiMfe/(r*r)-0.5*(K_Si+K_Fe)*(Dia*Dia-r*r);
+			}
+		}
+		else if (r < Core_D_Si) {
+			if (isIncreasing(p1, p2)) 
+			{
+				return GMsiMfe/(r*r)-0.5*(K_Si*KRP_Si+K_Fe)*(Dia*Dia-r*r);
+			} 
+			else 
+			{
+				return GMsiMfe/(r*r)-0.5*(K_Si+K_Fe)*(Dia*Dia-r*r);
+			}
+		}
+		else if(r < Dia)
+		{
+    			return GMsiMfe/(r*r)-0.5*(K_Si+K_Fe)*(Dia*Dia-r*r);
+		} 
+		else
+		{
+    			return GMsiMfe/(r*r);
+		}
+	}
 }
 
 __host__ __device__ void update_particle(Particle *p, Particle *particles, float dt, int num_particles)
