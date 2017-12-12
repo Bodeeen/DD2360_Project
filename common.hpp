@@ -32,7 +32,9 @@
 #define SDP_Fe 0.01
 #define Core_D_Si 376.403
 #define Core_D_Fe 376.026
-#define GMM 9.6759e+29
+#define GMsiMfe 9.6759e+29
+#define GMsiMsi 3.67065e+29
+#define GMfeMfe 2.55059e+30
 
 #define G 6.67408e-11
 #define eps 47.0975
