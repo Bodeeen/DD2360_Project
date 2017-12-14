@@ -112,24 +112,32 @@ __host__ __device__ float calculate_force(Particle p1, Particle p2)
 	}
 }
 
-__host__ __device__ void update_particle(Particle *p, Particle *particles, float dt, int num_particles)
+__host__ __device__ void update_particle(int idx, Particle *particles, float dt, int num_particles)
 {
 
+  //printf("before update %f %f\n", p->position.x, p->position.y);
   glm::vec3 f = glm::vec3(0.0);
   glm::vec3 a = glm::vec3(0.0);
 
+  float fscale;
+  glm::vec3 direction;
   for(int i = 0; i<num_particles; i++)
   {
-    f += glm::normalize(particles[i].position - p->position) * calculate_force(*p, particles[i]);
+    if(idx != i){
+//printf("|f|: %f %f %f\n", f.x, f.y, f.z);
+    fscale  = calculate_force(particles[idx], particles[i]);
+    direction = glm::normalize(particles[i].position - particles[idx].position);
+    f += direction * fscale;
+    }
   }
-
-  if(p->material)
+//printf("f: %f %f %f\n", f.x, f.y, f.z);
+  if(particles[idx].material)
     a = (1/(float)M_Fe)*f;
   else
     a = (1/(float)M_Si)*f;
 
-  p->velocity += a*dt;
-  p->position += dt * p->velocity;
+  particles[idx].velocity += a*dt;
+  particles[idx].position += dt * particles[idx].velocity;
   //return p.position + dt * p.velocity;
 }
 
@@ -138,16 +146,16 @@ __global__ void simulation_GPU(Particle *particles, int n, float dt)
         const int i = blockIdx.x*blockDim.x + threadIdx.x;
 
         if(i<n){
-          update_particle(&particles[i], particles, dt, n);
+          update_particle(i, particles, dt, n);
         }
 }
 
 GPUSimulation::GPUSimulation()
 {
-  std::cout << NUM_IRON_PARTICLES << std::endl;
-  std::cout << NUM_SILICATE_PARTICLES << std::endl;
-    std::shared_ptr<Planet> planetA = std::make_shared<Planet>(glm::vec3(23925.0, 0.0, 9042.7), glm::vec3(3.2416, 0, 0), glm::vec3(0, 3.0973, 0), NUM_IRON_PARTICLES, NUM_SILICATE_PARTICLES);
-    std::shared_ptr<Planet> planetB = std::make_shared<Planet>(glm::vec3(-23925.0, 0.0, -9042.7), glm::vec3(-3.2416, 0, 0), glm::vec3(0, -3.0973, 0), NUM_IRON_PARTICLES, NUM_SILICATE_PARTICLES);
+//  std::cout << NUM_IRON_PARTICLES << std::endl;
+//  std::cout << NUM_SILICATE_PARTICLES << std::endl;
+    std::shared_ptr<Planet> planetA = std::make_shared<Planet>(glm::vec3(Xcenter, 0.0, Zxenter), glm::vec3(Vinitx, 0, 0), glm::vec3(0, 3.0973, 0), NUM_IRON_PARTICLES, NUM_SILICATE_PARTICLES);
+    std::shared_ptr<Planet> planetB = std::make_shared<Planet>(glm::vec3(-Xcenter, 0.0, -Zxenter), glm::vec3(-Vinitx, 0, 0), glm::vec3(0, -3.0973, 0), NUM_IRON_PARTICLES, NUM_SILICATE_PARTICLES);
 
     planets.push_back(planetA);
     planets.push_back(planetB);
@@ -155,7 +163,7 @@ GPUSimulation::GPUSimulation()
     //Planet planetB = new Planet(glm::vec3(-23925.0, 0.0, -9042.7), glm::vec3(-3.2416, 0, 0), glm::vec3(0, -3.0973, 0), NUM_IRON_PARTICLES, NUM_SILICATE_PARTICLES);
 
 
-    dt = 1.f;
+    dt = 0.001f;
     gpu_calculating_time =0.;
     count =0;
         // printf("NUM_PARTICLES: %d, NUM_ITERATIONS: %d, BLOCK_SIZE: %d, dt: %.5f\n", NUM_PARTICLES, NUM_ITERATIONS, BLOCK_SIZE, dt);
@@ -167,7 +175,6 @@ void GPUSimulation::init()
   //cudaMalloc( &d_p, (NUM_SILICATE_PARTICLES+NUM_IRON_PARTICLES)*2 * sizeof(Particle));
   // cudaMalloc( &d_pB, (NUM_SILICATE_PARTICLES+NUM_IRON_PARTICLES) * sizeof(Particle));
   cudaMalloc( &d_p, NUM_PARTICLES * sizeof(Particle) );
-std::cout << "init in gpu!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"<< std::endl;
 
   std::vector<Particle> ironA = planets[0]->getIronParticles();
   std::vector<Particle> silA = planets[0]->getSilicateParticles();
@@ -179,30 +186,32 @@ std::cout << "init in gpu!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"<< s
   all.insert(all.end(), silA.begin(), silA.end());
   all.insert(all.end(), ironB.begin(), ironB.end());
   all.insert(all.end(), silB.begin(), silB.end());
-  // printf("Start computing particles on the GPU... ");.
-  for(auto &particle : all) {
-    std::cout << particle.position.x <<","<< particle.position.y<< "," << particle.position.z << std::endl;
-  }
+
   gettimeofday(&t0, NULL);
 
   //allDevice = all;
 
-  cudaMemcpy( d_p, &all[0], (NUM_SILICATE_PARTICLES+NUM_IRON_PARTICLES)*2 * sizeof(Particle) , cudaMemcpyHostToDevice );
   // cudaMemcpy( d_pB, planets[1], NUM_PARTICLES * sizeof(Particle) , cudaMemcpyHostToDevice );
   //checkCUDAError();
 }
 
 void GPUSimulation::update()
 {
-  //update_random(count, fake_random, NUM_PARTICLES);
-
-  //cudaMemcpy( d_r, fake_random, NUM_PARTICLES * sizeof(float3) , cudaMemcpyHostToDevice );
   //checkCUDAError();
+  //cudaMemcpy( d_p, &all[0], (NUM_SILICATE_PARTICLES+NUM_IRON_PARTICLES)*2 * sizeof(Particle) , cudaMemcpyHostToDevice );
 
   gettimeofday(&t2, NULL);
-  //simulation_GPU<<<(NUM_PARTICLES + BLOCK_SIZE - 1)/BLOCK_SIZE, BLOCK_SIZE>>>(thrust::raw_pointer_cast(&allDevice[0]), NUM_PARTICLES, dt);
-  simulation_GPU<<<(NUM_PARTICLES + BLOCK_SIZE - 1)/BLOCK_SIZE, BLOCK_SIZE>>>(d_p, NUM_PARTICLES, dt);
+  allDevice = all;
+  simulation_GPU<<<(NUM_PARTICLES + BLOCK_SIZE - 1)/BLOCK_SIZE, BLOCK_SIZE>>>(thrust::raw_pointer_cast(&allDevice[0]), NUM_PARTICLES, dt);
+  all = allDevice;
+  for(auto &particle : all) {
+    std::cout << particle.position.x << " " << particle.position.y << " " << particle.position.z << std::endl;
+  }
+  //exit(1);
   gettimeofday(&t3, NULL);
+
+  //cudaMemcpy( &all[0], d_p, NUM_PARTICLES * sizeof(Particle), cudaMemcpyDeviceToHost );
+  checkCUDAError();
 
   gpu_calculating_time += getElapsed(t2,t3);
   count++;
@@ -223,7 +232,7 @@ void GPUSimulation::display()
 
 void GPUSimulation::release()
 {
-  //cudaFree( d_p );
+  cudaFree( d_p );
   //cudaFree( d_r );
 
 	//free(particles);

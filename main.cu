@@ -45,12 +45,12 @@ void init()
   shaderProgram = util::loadShaders("vt.glsl", "fg.glsl");
   glUseProgram(shaderProgram);
 
-  camera = glm::vec3(0.0, 0.0, 100.0);
+  camera = glm::vec3(0.0, 0.0, 50000.0);
 
   glm::mat4 model, view, projection;
   model = glm::mat4(1.0f);
   view = glm::lookAt(camera, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-  projection = glm::perspective(glm::radians(45.0f), (float)1280 / (float)720, 0.1f, 100.0f);
+  projection = glm::perspective(glm::radians(60.0f), (float)1280 / (float)720, 0.1f, 100000.0f);
 
   unsigned int modelLoc = glGetUniformLocation(shaderProgram, "model");
   unsigned int viewLoc = glGetUniformLocation(shaderProgram, "view");
@@ -67,54 +67,85 @@ void release()
   glDeleteVertexArrays(1, &g_default_vao);
 
   // Do not forget to release any memory allocation here!
+  simulator.release();
 }
 
 void display()
 {
+  simulator.update();
   // Clear the screen
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
   //printf("FreeGLUT triggered the display() callback!\n");
 
+
   // Your rendering code must be here! Do not forget to swap the
   // front and back buffers, and to force a redisplay to keep the
   // render loop running. This functionality is available withinglm::vec3
   // FreeGLUT as well, check the assignment for more information.
-  std::cout << "hello!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
-  for(int i=0; i<2; i++) {
-    GLint color_location = glGetUniformLocation(shaderProgram, "myColor");
-    glUniform4fv(color_location, 1, simulator.planets[0]->getSilicateColor());
 
-    for(auto &particle : simulator.planets[i]->getSilicateParticles()) {
-      std::cout << particle.position.x << "," << particle.position.y << "," << particle.position.z << std::endl;
-      glm::mat4 mod(1.0f);
-      glm::mat4 model(1.0f);
-      model = glm::translate(model, particle.position);
-      unsigned int modelLoc = glGetUniformLocation(shaderProgram, "model");
-      glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-      glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-      glutSolidSphere(0.02,10,10);
+  GLint color_location = glGetUniformLocation(shaderProgram, "myColor");
+  glUniform4fv(color_location, 1, simulator.planets[0]->getSilicateColor());
+  color_location = glGetUniformLocation(shaderProgram, "myColor");
 
-      glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-      glutSolidSphere(0.02,10,10);
+  for(auto &particle : simulator.all) {
+    //std::cout << particle.position.x << "," << particle.position.y << "," << particle.position.z << std::endl;
+    /* if it is iron */
+    glm::mat4 mod(1.0f);
+    glm::mat4 model(1.0f);
+    model = glm::translate(model, particle.position);
+    if(particle.material) {
+      glUniform4fv(color_location, 1, simulator.planets[0]->getIronColor());
+    }
+    else {
+      glUniform4fv(color_location, 1, simulator.planets[0]->getSilicateColor());
     }
 
-    color_location = glGetUniformLocation(shaderProgram, "myColor");
-    glUniform4fv(color_location, 1, simulator.planets[0]->getIronColor());
+    unsigned int modelLoc = glGetUniformLocation(shaderProgram, "model");
+    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    glutSolidSphere(150,10,10);
+  
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    glutSolidSphere(150,10,10);
 
-    for(auto &particle : simulator.planets[i]->getIronParticles()) {
-      glm::mat4 mod(1.0f);
-      glm::mat4 model(1.0f);
-      model = glm::translate(model, particle.position);
-      unsigned int modelLoc = glGetUniformLocation(shaderProgram, "model");
-      glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-      glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-      glutSolidSphere(0.02,10,10);
-
-      glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-      glutSolidSphere(0.02,10,10);
-    }
   }
+//  sleep(5);
+
+//  for(int i=0; i<2; i++) {
+//    GLint color_location = glGetUniformLocation(shaderProgram, "myColor");
+//    glUniform4fv(color_location, 1, simulator.planets[0]->getSilicateColor());
+//
+//    for(auto &particle : simulator.planets[i]->getSilicateParticles()) {
+//      std::cout << particle.position.x << "," << particle.position.y << "," << particle.position.z << std::endl;
+//      glm::mat4 mod(1.0f);
+//      glm::mat4 model(1.0f);
+//      model = glm::translate(model, particle.position);
+//      unsigned int modelLoc = glGetUniformLocation(shaderProgram, "model");
+//      glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+//      glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+//      glutSolidSphere(150,10,10);
+//
+//      glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+//      glutSolidSphere(150,10,10);
+//    }
+//
+//    color_location = glGetUniformLocation(shaderProgram, "myColor");
+//    glUniform4fv(color_location, 1, simulator.planets[0]->getIronColor());
+//
+//    for(auto &particle : simulator.planets[i]->getIronParticles()) {
+//      glm::mat4 mod(1.0f);
+//      glm::mat4 model(1.0f);
+//      model = glm::translate(model, particle.position);
+//      unsigned int modelLoc = glGetUniformLocation(shaderProgram, "model");
+//      glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+//      glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+//      glutSolidSphere(150,10,10);
+//
+//      glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+//      glutSolidSphere(150,10,10);
+//    }
+//  }
 
   // Important note: The following function flushes the rendering
   // queue, but this is only for single-buffered rendering. You

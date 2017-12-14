@@ -15,7 +15,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <vector>
 
-#define NUM_SILICATE_PARTICLES 300
+#define NUM_SILICATE_PARTICLES 200
 #define NUM_IRON_PARTICLES 300
 
 #define PATH_MAX    4096
@@ -36,6 +36,11 @@
 #define GMsiMsi 3.67065e+29
 #define GMfeMfe 2.55059e+30
 
+//#define GMsiMfe 9.6759e+19
+//#define GMsiMsi 3.67065e+19
+//#define GMfeMfe 2.55059e+20
+
+
 #define G 6.67408e-11
 #define eps 47.0975
 #define time_step 5.8117
@@ -43,7 +48,11 @@
 #define NUM_ITERATIONS 1000000LL
 #define BLOCK_SIZE 256
 
-//float D = 376.78;
+#define RImpactor 6371.0f
+#define RInnershell 3185.5f
+#define Xcenter 3185.0f
+#define Zxenter 0.0f
+#define Vinitx 3.2416f
 
 typedef uint8_t BYTE;
 

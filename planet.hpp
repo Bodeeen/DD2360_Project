@@ -18,8 +18,8 @@ class Planet
 		//std::vector<float> colorSilicate;
 		//std::vector<float> colorIron;
 
-		float colorSilicate[4] = {0.0f, 1.0f, 0.0f, 0.4f};
-		float colorIron[4] = {0.0f, 0.0f, 1.0f, 0.4f};
+		float colorSilicate[4] = {0.0f, 1.0f, 0.0f, 0.1f};
+		float colorIron[4] = {0.0f, 0.0f, 1.0f, 0.1f};
 
 	public:
 		Planet(glm::vec3, glm::vec3, glm::vec3, int, int);

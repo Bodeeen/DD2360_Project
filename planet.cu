@@ -5,32 +5,36 @@ Planet::Planet(glm::vec3 origin, glm::vec3 lin_vel, glm::vec3 ang_vel, int num_F
 {
 
 
-  //setOrigin(origin);
-  setOrigin(glm::vec3(0,0,0));
+  setOrigin(origin);
+  //setOrigin(glm::vec3(0,0,0));
 
   unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
   std::mt19937 generator(seed);
   std::uniform_real_distribution<double> uniform01(0.0, 1.0);
+  std::uniform_real_distribution<double> innerShell(0.0, RInnershell);
+  std::uniform_real_distribution<double> outerShell(RInnershell, RImpactor);
 
   std::cout << num_Si_particles << std::endl;
   std::cout << num_Fe_particles << std::endl;
 
   for(int i=0; i<num_Si_particles; i++) {
+    double rOuter = outerShell(generator);
     double theta = 2 * M_PI * uniform01(generator);
     double phi = acos(1 - 2 * uniform01(generator));
-    double x = 2 * sin(phi) * cos(theta);
-    double y = 2 * sin(phi) * sin(theta);
-    double z = 2 * cos(phi);
+    double x = rOuter * sin(phi) * cos(theta);
+    double y = rOuter * sin(phi) * sin(theta);
+    double z = rOuter * cos(phi);
 
     addSilicateParticle(x, y, z);
   }
 
   for(int i=0; i<num_Fe_particles; i++) {
+    double rInner = innerShell(generator);
     double theta = 2 * M_PI * uniform01(generator);
     double phi = acos(1 - 2 * uniform01(generator));
-    double x = 1.7 * sin(phi) * cos(theta);
-    double y = 1.7 * sin(phi) * sin(theta);
-    double z = 1.7 * cos(phi);
+    double x = rInner * sin(phi) * cos(theta);
+    double y = rInner * sin(phi) * sin(theta);
+    double z = rInner * cos(phi);
 
     addIronParticle(x, y, z);
   }

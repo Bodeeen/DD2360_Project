@@ -26,7 +26,7 @@ __host__ __device__ float3 operator+(const float3 &a, const float3 &b);
 
 __host__ __device__ float3 operator*(const float &a, const float3 &b);
 
-__host__ __device__ void update_particle(Particle *p, Particle *particles, float dt, int num_particles);
+__host__ __device__ void update_particle(int , Particle *particles, float dt, int num_particles);
 
 __global__ void simulation_GPU(Particle *particles, int n, float dt);
 
@@ -50,11 +50,7 @@ private:
         // int BLOCK_SIZE;
 int NUM_PARTICLES = (NUM_SILICATE_PARTICLES+NUM_IRON_PARTICLES) * 2 ;
 
-
-
-        //thrust::host_vector<Particle> all;
-        std::vector<Particle> all;
-        //thrust::device_vector<Particle> allDevice;
+        thrust::device_vector<Particle> allDevice;
         Particle *d_p;
 
         //Particle        *d_p;
@@ -63,6 +59,7 @@ int NUM_PARTICLES = (NUM_SILICATE_PARTICLES+NUM_IRON_PARTICLES) * 2 ;
         struct timeval t0, t1, t2, t3, t5, t6;
         int count;
 public:
+        thrust::host_vector<Particle> all;
   std::vector<std::shared_ptr<Planet>> planets;
 
 
