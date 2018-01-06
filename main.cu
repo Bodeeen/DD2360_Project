@@ -22,7 +22,19 @@ unsigned int shaderProgram = 0;
 
 //std::unique_ptr<GPUSimulation> simulator;
 
+const int num_particles = 2*(NUM_SILICATE_PARTICLES + NUM_IRON_PARTICLES);
+
 GPUSimulation simulator;
+// This will identify our vertex buffer
+GLuint vertexbuffer;
+GLuint materialBuffer;
+GLuint IndexVBOID;
+GLuint ssbo_pos;
+Particle_vec4 part_array[num_particles];
+
+GLfloat triangle[] = {0.0f, 150.0f, 0.0f,
+                  -150.0f, -150.0f, 0.0f,
+                  150.0f, -150.0f, 0.0f};
 
 void init()
 {
@@ -59,6 +71,27 @@ void init()
   glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
   glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
   glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
+
+  glGenBuffers(1, &ssbo_pos);
+
+
+  // Generate 1 buffer, put the resulting identifier in vertexbuffer
+  glGenBuffers(1, &vertexbuffer);
+
+  // The following commands will talk about our 'vertexbuffer' buffer
+  glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+  // Give our vertices to OpenGL.
+  glBufferData(GL_ARRAY_BUFFER, sizeof(triangle), &triangle, GL_DYNAMIC_DRAW);
+
+  ushort pindices[3];
+  pindices[0] = 0;
+  pindices[1] = 1;
+  pindices[2] = 2;
+
+  glGenBuffers(1, &IndexVBOID);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IndexVBOID);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(ushort)*3, pindices, GL_DYNAMIC_DRAW);
+
 }
 
 void release()
@@ -88,28 +121,54 @@ void display()
   glUniform4fv(color_location, 1, simulator.planets[0]->getSilicateColor());
   color_location = glGetUniformLocation(shaderProgram, "myColor");
 
-  for(auto &particle : simulator.all) {
-    //std::cout << particle.position.x << "," << particle.position.y << "," << particle.position.z << std::endl;
-    /* if it is iron */
-    glm::mat4 mod(1.0f);
-    glm::mat4 model(1.0f);
-    model = glm::translate(model, particle.position);
-    if(particle.material) {
-      glUniform4fv(color_location, 1, simulator.planets[0]->getIronColor());
-    }
-    else {
-      glUniform4fv(color_location, 1, simulator.planets[0]->getSilicateColor());
-    }
-
-    unsigned int modelLoc = glGetUniformLocation(shaderProgram, "model");
-    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    glutSolidSphere(150,10,10);
-  
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    glutSolidSphere(150,10,10);
-
+  for(int i = 0; i < num_particles; i++) {
+    part_array[i].position = vec4(simulator.all[i].position, 1);
+    part_array[i].velocity = vec4(simulator.all[i].velocity, 1);
+    part_array[i].material = simulator.all[i].material;
+    //std::cout << pos_array[i].x << " " << pos_array[i].y << " " << pos_array[i].z << std::endl;
   }
+
+  glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_pos);
+  // glBufferData(GL_SHADER_STORAGE_BUFFER, simulator.all.size()*sizeof(Particle), &simulator.all[0], GL_DYNAMIC_DRAW);
+  glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(part_array), part_array, GL_DYNAMIC_DRAW);
+  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, ssbo_pos);
+  glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
+
+  glEnableVertexAttribArray(0);
+  glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+
+  glEnableClientState(GL_VERTEX_ARRAY);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0); //For glDrawElements
+  // Draw the triangle !
+  // glDrawArrays(GL_TRIANGLES, 0, 3); // Starting from vertex 0; 3 vertices total -> 1 triangle
+  glDrawElementsInstanced(GL_TRIANGLES, 3, GL_UNSIGNED_SHORT, NULL, num_particles);
+  glDisableVertexAttribArray(0);
+
+
+
+
+  // for(auto &particle : simulator.all) {
+  //   //std::cout << particle.position.x << "," << particle.position.y << "," << particle.position.z << std::endl;
+  //   /* if it is iron */
+  //   glm::mat4 mod(1.0f);
+  //   glm::mat4 model(1.0f);
+  //   model = glm::translate(model, particle.position);
+  //   if(particle.material) {
+  //     glUniform4fv(color_location, 1, simulator.planets[0]->getIronColor());
+  //   }
+  //   else {
+  //     glUniform4fv(color_location, 1, simulator.planets[0]->getSilicateColor());
+  //   }
+  //
+  //   unsigned int modelLoc = glGetUniformLocation(shaderProgram, "model");
+  //   glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+  //   glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+  //   glutSolidSphere(150,10,10);
+  //
+  //   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+  //   glutSolidSphere(150,10,10);
+  //
+  // }
 //  sleep(5);
 
 //  for(int i=0; i<2; i++) {

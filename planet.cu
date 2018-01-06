@@ -65,12 +65,12 @@ void Planet::setOrigin(double x, double y, double z)
 
 void Planet::addSilicateParticle(double x_pos, double y_pos, double z_pos)
 {
-  silicateParticles.push_back(Particle{glm::vec3(x_pos + origin[0], y_pos + origin[1], z_pos + origin[2]), glm::vec3(0,0,0), false});
+  silicateParticles.push_back(Particle{glm::vec3(x_pos + origin[0], y_pos + origin[1], z_pos + origin[2]), glm::vec3(0,0,0), 0});
 }
 
 void Planet::addIronParticle(double x, double y, double z)
 {
-  ironParticles.push_back(Particle{glm::vec3(x + origin[0], y + origin[1], z + origin[2]), glm::vec3(0,0,0), true});
+  ironParticles.push_back(Particle{glm::vec3(x + origin[0], y + origin[1], z + origin[2]), glm::vec3(0,0,0), 1});
 }
 
 std::vector<Particle> Planet::getIronParticles() { return ironParticles; }

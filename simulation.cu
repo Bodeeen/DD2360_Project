@@ -36,13 +36,13 @@ __host__ __device__ float calculate_force(Particle p1, Particle p2)
   	}
 	if(p1.material && p2.material)//Fe-Fe
 	{
-		if (r<Core_D_Fe) 
+		if (r<Core_D_Fe)
 		{
-			if (isIncreasing(p1, p2)) 
+			if (isIncreasing(p1, p2))
 			{
 				return GMfeMfe/(r*r)-(K_Fe*KRP_Fe)*(Dia*Dia-r*r);
 			}
-			else 
+			else
 			{
 				return GMfeMfe/(r*r)-(K_Fe)*(Dia*Dia-r*r);
 			}
@@ -50,7 +50,7 @@ __host__ __device__ float calculate_force(Particle p1, Particle p2)
 		else if(r < Dia)
 		{
     			return GMfeMfe/(r*r)-(K_Fe)*(Dia*Dia-r*r);
-		} 
+		}
 		else
 		{
     			return GMfeMfe/(r*r);
@@ -58,13 +58,13 @@ __host__ __device__ float calculate_force(Particle p1, Particle p2)
 	}
 	else if(!p1.material && !p2.material)//Si-Si
 	{
-		if (r<Core_D_Si) 
+		if (r<Core_D_Si)
 		{
-			if (isIncreasing(p1, p2)) 
+			if (isIncreasing(p1, p2))
 			{
 				return GMsiMsi/(r*r)-(K_Si*KRP_Si)*(Dia*Dia-r*r);
 			}
-			else 
+			else
 			{
 				return GMsiMsi/(r*r)-(K_Si)*(Dia*Dia-r*r);
 			}
@@ -79,24 +79,24 @@ __host__ __device__ float calculate_force(Particle p1, Particle p2)
 		}
 	}
 	else//Fe-Si
-	{	
-		if (r<Core_D_Fe) 
+	{
+		if (r<Core_D_Fe)
 		{
-			if (isIncreasing(p1, p2)) 
+			if (isIncreasing(p1, p2))
 			{
 				return GMsiMfe/(r*r)-0.5*(K_Si*KRP_Si+K_Fe*KRP_Fe)*(Dia*Dia-r*r);
 			}
-			else 
+			else
 			{
 				return GMsiMfe/(r*r)-0.5*(K_Si+K_Fe)*(Dia*Dia-r*r);
 			}
 		}
 		else if (r < Core_D_Si) {
-			if (isIncreasing(p1, p2)) 
+			if (isIncreasing(p1, p2))
 			{
 				return GMsiMfe/(r*r)-0.5*(K_Si*KRP_Si+K_Fe)*(Dia*Dia-r*r);
-			} 
-			else 
+			}
+			else
 			{
 				return GMsiMfe/(r*r)-0.5*(K_Si+K_Fe)*(Dia*Dia-r*r);
 			}
@@ -104,7 +104,7 @@ __host__ __device__ float calculate_force(Particle p1, Particle p2)
 		else if(r < Dia)
 		{
     			return GMsiMfe/(r*r)-0.5*(K_Si+K_Fe)*(Dia*Dia-r*r);
-		} 
+		}
 		else
 		{
     			return GMsiMfe/(r*r);
@@ -204,9 +204,9 @@ void GPUSimulation::update()
   allDevice = all;
   simulation_GPU<<<(NUM_PARTICLES + BLOCK_SIZE - 1)/BLOCK_SIZE, BLOCK_SIZE>>>(thrust::raw_pointer_cast(&allDevice[0]), NUM_PARTICLES, dt);
   all = allDevice;
-  for(auto &particle : all) {
-    std::cout << particle.position.x << " " << particle.position.y << " " << particle.position.z << std::endl;
-  }
+  // for(auto &particle : all) {
+  //   std::cout << particle.position.x << " " << particle.position.y << " " << particle.position.z << std::endl;
+  // }
   //exit(1);
   gettimeofday(&t3, NULL);
 
