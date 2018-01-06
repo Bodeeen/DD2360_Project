@@ -1,7 +1,7 @@
 #include "planet.hpp"
 #include <iostream>
 
-Planet::Planet(glm::vec3 origin, glm::vec3 lin_vel, glm::vec3 ang_vel, int num_Fe_particles, int num_Si_particles)
+Planet::Planet(glm::vec4 origin, glm::vec3 lin_vel, glm::vec3 ang_vel, int num_Fe_particles, int num_Si_particles)
 {
 
 
@@ -45,32 +45,36 @@ Planet::Planet(glm::vec3 origin, glm::vec3 lin_vel, glm::vec3 ang_vel, int num_F
 void Planet::setLinearVelocity(glm::vec3 linearVelocity, glm::vec3 angularVelocity)
 {
   for(auto &particle : silicateParticles) {
-    particle.velocity = glm::cross(angularVelocity / 3600.0f, (particle.position - origin)) + linearVelocity;
+    glm::vec4 arg2 = particle.position - origin;
+    glm::vec3 arg = glm::vec3(arg2.x, arg2.y, arg2.z);
+    particle.velocity = glm::vec4(glm::cross(angularVelocity / 3600.0f, arg) + linearVelocity, 1.0f);
   }
 
   for(auto &particle : ironParticles) {
-    particle.velocity = glm::cross((angularVelocity) / 3600.0f, (particle.position - origin)) + linearVelocity;
+    glm::vec4 arg2 = particle.position - origin;
+    glm::vec3 arg = glm::vec3(arg2.x, arg2.y, arg2.z);
+    particle.velocity = glm::vec4(glm::cross(angularVelocity / 3600.0f, arg) + linearVelocity, 1.0f);
   }
 }
 
-void Planet::setOrigin(glm::vec3 origin)
+void Planet::setOrigin(glm::vec4 origin)
 {
   this->origin = origin;
 }
 
 void Planet::setOrigin(double x, double y, double z)
 {
-  origin.x = x; origin.y = y; origin.z = z;
+  origin.x = x; origin.y = y; origin.z = z; origin.w = 1.0;
 }
 
 void Planet::addSilicateParticle(double x_pos, double y_pos, double z_pos)
 {
-  silicateParticles.push_back(Particle{glm::vec3(x_pos + origin[0], y_pos + origin[1], z_pos + origin[2]), glm::vec3(0,0,0), 0});
+  silicateParticles.push_back(Particle{glm::vec4(x_pos + origin[0], y_pos + origin[1], z_pos + origin[2], 1.0f), glm::vec4(0,0,0,0), 0});
 }
 
 void Planet::addIronParticle(double x, double y, double z)
 {
-  ironParticles.push_back(Particle{glm::vec3(x + origin[0], y + origin[1], z + origin[2]), glm::vec3(0,0,0), 1});
+  ironParticles.push_back(Particle{glm::vec4(x + origin[0], y + origin[1], z + origin[2], 1.0f), glm::vec4(0,0,0,0), 1});
 }
 
 std::vector<Particle> Planet::getIronParticles() { return ironParticles; }

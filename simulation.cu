@@ -1,5 +1,7 @@
 #include "simulation.h"
 
+#include <cuda_gl_interop.h>
+
 
 double getElapsed(struct timeval t0, struct timeval t1)// millisecond
 {
@@ -11,15 +13,29 @@ bool operator!=(const float3 &a, const float3 &b)
   return (a.x != b.x) || (a.y != b.y) || (a.z != b.z);
 }
 
+bool operator!=(const float4 &a, const float4 &b)
+{
+  return (a.x != b.x) || (a.y != b.y) || (a.z != b.z) || (a.w != b.w);
+}
 
 __host__ __device__ float3 operator+(const float3 &a, const float3 &b)
 {
   return make_float3(a.x+b.x, a.y+b.y, a.z+b.z);
 }
 
+__host__ __device__ float4 operator+(const float4 &a, const float4 &b)
+{
+  return make_float4(a.x+b.x, a.y+b.y, a.z+b.z, 1.0);
+}
+
 __host__ __device__ float3 operator*(const float &a, const float3 &b)
 {
   return make_float3(a*b.x, a*b.y, a*b.z);
+}
+
+__host__ __device__ float4 operator*(const float &a, const float4 &b)
+{
+  return make_float4(a*b.x, a*b.y, a*b.z, 1.0);
 }
 
 __host__ __device__ bool isIncreasing(Particle p1, Particle p2)
@@ -116,11 +132,11 @@ __host__ __device__ void update_particle(int idx, Particle *particles, float dt,
 {
 
   //printf("before update %f %f\n", p->position.x, p->position.y);
-  glm::vec3 f = glm::vec3(0.0);
-  glm::vec3 a = glm::vec3(0.0);
+  glm::vec4 f = glm::vec4(0.0);
+  glm::vec4 a = glm::vec4(0.0);
 
   float fscale;
-  glm::vec3 direction;
+  glm::vec4 direction;
   for(int i = 0; i<num_particles; i++)
   {
     if(idx != i){
@@ -154,8 +170,8 @@ GPUSimulation::GPUSimulation()
 {
 //  std::cout << NUM_IRON_PARTICLES << std::endl;
 //  std::cout << NUM_SILICATE_PARTICLES << std::endl;
-    std::shared_ptr<Planet> planetA = std::make_shared<Planet>(glm::vec3(Xcenter, 0.0, Zxenter), glm::vec3(Vinitx, 0, 0), glm::vec3(0, 3.0973, 0), NUM_IRON_PARTICLES, NUM_SILICATE_PARTICLES);
-    std::shared_ptr<Planet> planetB = std::make_shared<Planet>(glm::vec3(-Xcenter, 0.0, -Zxenter), glm::vec3(-Vinitx, 0, 0), glm::vec3(0, -3.0973, 0), NUM_IRON_PARTICLES, NUM_SILICATE_PARTICLES);
+    std::shared_ptr<Planet> planetA = std::make_shared<Planet>(glm::vec4(Xcenter, 0.0, Zxenter, 1.0), glm::vec3(Vinitx, 0, 0), glm::vec3(0, 3.0973, 0), NUM_IRON_PARTICLES, NUM_SILICATE_PARTICLES);
+    std::shared_ptr<Planet> planetB = std::make_shared<Planet>(glm::vec4(-Xcenter, 0.0, -Zxenter, 1.0), glm::vec3(-Vinitx, 0, 0), glm::vec3(0, -3.0973, 0), NUM_IRON_PARTICLES, NUM_SILICATE_PARTICLES);
 
     planets.push_back(planetA);
     planets.push_back(planetB);
@@ -187,7 +203,8 @@ void GPUSimulation::init()
   all.insert(all.end(), ironB.begin(), ironB.end());
   all.insert(all.end(), silB.begin(), silB.end());
 
-  gettimeofday(&t0, NULL);
+  cudaEventCreate(&start);
+  cudaEventCreate(&stop);
 
   //allDevice = all;
 
@@ -195,25 +212,32 @@ void GPUSimulation::init()
   //checkCUDAError();
 }
 
-void GPUSimulation::update()
+void GPUSimulation::update(cudaGraphicsResource_t &ssbo_handle)
 {
   //checkCUDAError();
   //cudaMemcpy( d_p, &all[0], (NUM_SILICATE_PARTICLES+NUM_IRON_PARTICLES)*2 * sizeof(Particle) , cudaMemcpyHostToDevice );
-
-  gettimeofday(&t2, NULL);
-  allDevice = all;
-  simulation_GPU<<<(NUM_PARTICLES + BLOCK_SIZE - 1)/BLOCK_SIZE, BLOCK_SIZE>>>(thrust::raw_pointer_cast(&allDevice[0]), NUM_PARTICLES, dt);
-  all = allDevice;
+  cudaGraphicsMapResources(1, &ssbo_handle);
+  size_t t = NUM_PARTICLES;
+  cudaGraphicsResourceGetMappedPointer((void **)&d_p, &t, ssbo_handle);
+  cudaEventRecord(start);
+  //allDevice = all;
+  simulation_GPU<<<(NUM_PARTICLES + BLOCK_SIZE - 1)/BLOCK_SIZE, BLOCK_SIZE>>>(d_p, NUM_PARTICLES, dt);
+  //all = allDevice;
   // for(auto &particle : all) {
   //   std::cout << particle.position.x << " " << particle.position.y << " " << particle.position.z << std::endl;
   // }
   //exit(1);
-  gettimeofday(&t3, NULL);
+  cudaEventRecord(stop);
+  cudaGraphicsUnmapResources(1, &ssbo_handle);
+
+  cudaEventSynchronize(stop);
 
   //cudaMemcpy( &all[0], d_p, NUM_PARTICLES * sizeof(Particle), cudaMemcpyDeviceToHost );
   checkCUDAError();
 
-  gpu_calculating_time += getElapsed(t2,t3);
+  float milliseconds = 0;
+cudaEventElapsedTime(&milliseconds, start, stop);
+  std::cout << "CUDA time spent: " << milliseconds << "ms" << std::endl;
   count++;
 }
 

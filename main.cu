@@ -2,6 +2,8 @@
 #include "glad/glad.h"
 #include "glm/gtc/type_ptr.hpp"
 
+#include <cuda_gl_interop.h>
+
 #include <memory>
 #include <chrono>
 #include <random>
@@ -25,12 +27,13 @@ unsigned int shaderProgram = 0;
 const int num_particles = 2*(NUM_SILICATE_PARTICLES + NUM_IRON_PARTICLES);
 
 GPUSimulation simulator;
+cudaGraphicsResource_t ssbo_handle;
 // This will identify our vertex buffer
 GLuint vertexbuffer;
 GLuint materialBuffer;
 GLuint IndexVBOID;
 GLuint ssbo_pos;
-Particle_vec4 part_array[num_particles];
+//Particle_vec4 part_array[num_particles];
 
 GLfloat triangle[] = {0.0f, 150.0f, 0.0f,
                   -150.0f, -150.0f, 0.0f,
@@ -73,7 +76,12 @@ void init()
   glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
   glGenBuffers(1, &ssbo_pos);
+  glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_pos);
+  glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(Particle)*simulator.all.size(), &simulator.all[0], GL_DYNAMIC_DRAW);
 
+  glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
+
+  cudaGraphicsGLRegisterBuffer(&ssbo_handle, ssbo_pos, cudaGraphicsRegisterFlagsNone);
 
   // Generate 1 buffer, put the resulting identifier in vertexbuffer
   glGenBuffers(1, &vertexbuffer);
@@ -105,7 +113,7 @@ void release()
 
 void display()
 {
-  simulator.update();
+  simulator.update(ssbo_handle);
   // Clear the screen
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -121,19 +129,6 @@ void display()
   glUniform4fv(color_location, 1, simulator.planets[0]->getSilicateColor());
   color_location = glGetUniformLocation(shaderProgram, "myColor");
 
-  for(int i = 0; i < num_particles; i++) {
-    part_array[i].position = vec4(simulator.all[i].position, 1);
-    part_array[i].velocity = vec4(simulator.all[i].velocity, 1);
-    part_array[i].material = simulator.all[i].material;
-    //std::cout << pos_array[i].x << " " << pos_array[i].y << " " << pos_array[i].z << std::endl;
-  }
-
-  glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_pos);
-  // glBufferData(GL_SHADER_STORAGE_BUFFER, simulator.all.size()*sizeof(Particle), &simulator.all[0], GL_DYNAMIC_DRAW);
-  glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(part_array), part_array, GL_DYNAMIC_DRAW);
-  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, ssbo_pos);
-  glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
-
   glEnableVertexAttribArray(0);
   glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
 
@@ -141,11 +136,13 @@ void display()
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0); //For glDrawElements
   // Draw the triangle !
   // glDrawArrays(GL_TRIANGLES, 0, 3); // Starting from vertex 0; 3 vertices total -> 1 triangle
+  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, ssbo_pos);
+  timeval a, b;
+  gettimeofday(&a, NULL);
   glDrawElementsInstanced(GL_TRIANGLES, 3, GL_UNSIGNED_SHORT, NULL, num_particles);
+  gettimeofday(&b, NULL);
+  std::cout << "OpenGL Rendering: " << getElapsed(a, b) << "s" << std::endl;
   glDisableVertexAttribArray(0);
-
-
-
 
   // for(auto &particle : simulator.all) {
   //   //std::cout << particle.position.x << "," << particle.position.y << "," << particle.position.z << std::endl;

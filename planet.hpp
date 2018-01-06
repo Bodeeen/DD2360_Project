@@ -10,7 +10,7 @@
 class Planet
 {
 	private:
-		glm::vec3 origin;
+		glm::vec4 origin;
 
 		std::vector<Particle> silicateParticles;
 		std::vector<Particle> ironParticles;
@@ -22,9 +22,9 @@ class Planet
 		float colorIron[4] = {0.0f, 0.0f, 1.0f, 0.1f};
 
 	public:
-		Planet(glm::vec3, glm::vec3, glm::vec3, int, int);
+		Planet(glm::vec4, glm::vec3, glm::vec3, int, int);
 
-		void setOrigin(glm::vec3);
+		void setOrigin(glm::vec4);
 		void setOrigin(double, double, double);
 
 		void setLinearVelocity(glm::vec3, glm::vec3);

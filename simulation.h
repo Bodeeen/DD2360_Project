@@ -15,8 +15,6 @@
 
 #include "common.hpp"
 
-
-
 double getElapsed(struct timeval t0, struct timeval t1);
 
 bool operator!=(const float3 &a, const float3 &b);
@@ -34,7 +32,7 @@ class Simulation
 {
 public:
         virtual void init() = 0;
-        virtual void update() = 0;
+        virtual void update(cudaGraphicsResource_t&) = 0;
         virtual void display() = 0;
         virtual void release() = 0;
 };
@@ -55,9 +53,12 @@ int NUM_PARTICLES = (NUM_SILICATE_PARTICLES+NUM_IRON_PARTICLES) * 2 ;
 
         //Particle        *d_p;
         // Particle        *d_pB;
+        
         double gpu_calculating_time;
         struct timeval t0, t1, t2, t3, t5, t6;
         int count;
+        cudaEvent_t start, stop;
+
 public:
         thrust::host_vector<Particle> all;
   std::vector<std::shared_ptr<Planet>> planets;
@@ -67,7 +68,7 @@ public:
         // virtual void init(int argc, char const *argv[])
         void init();
 
-        void update();
+        void update(cudaGraphicsResource_t&);
 
         void display();
 
