@@ -22,6 +22,9 @@ GLuint g_default_vao = 0;
 glm::vec3 camera;
 unsigned int shaderProgram = 0;
 
+int NUM_SILICATE_PARTICLES = 6000;
+int NUM_IRON_PARTICLES = 9000;
+
 //std::unique_ptr<GPUSimulation> simulator;
 
 const int num_particles = 2*(NUM_SILICATE_PARTICLES + NUM_IRON_PARTICLES);
@@ -270,6 +273,10 @@ void processSpecialKeys(int key, int x, int y)
 
 int main(int argc, char **argv)
 {
+  if(argc==3) {
+    NUM_IRON_PARTICLES = std::atoi(argv[1]);
+    NUM_SILICATE_PARTICLES = std::atoi(argv[2]);
+  }
   // Initialize FreeGLUT and create the window
   glutInit(&argc, argv);
 

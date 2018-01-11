@@ -43,10 +43,7 @@ private:
 
         float dt;
 
-//        int NUM_PARTICLES;
-        // int NUM_ITERATIONS;
-        // int BLOCK_SIZE;
-int NUM_PARTICLES = (NUM_SILICATE_PARTICLES+NUM_IRON_PARTICLES) * 2 ;
+        int NUM_PARTICLES = (NUM_SILICATE_PARTICLES+NUM_IRON_PARTICLES) * 2 ;
 
         thrust::device_vector<Particle> allDevice;
         Particle *d_p;

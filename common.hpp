@@ -15,8 +15,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <vector>
 
-#define NUM_SILICATE_PARTICLES 6000
-#define NUM_IRON_PARTICLES 9000
+//#define NUM_SILICATE_PARTICLES 6000
+//#define NUM_IRON_PARTICLES 9000
 
 #define PATH_MAX    4096
 #define GL_SUCCESS  0
@@ -54,6 +54,8 @@
 #define Zxenter 0.0f
 #define Vinitx 3.2416f
 
+extern int NUM_SILICATE_PARTICLES;
+extern int NUM_IRON_PARTICLES;
 typedef uint8_t BYTE;
 
 typedef struct{

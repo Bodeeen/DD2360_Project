@@ -170,6 +170,11 @@ GPUSimulation::GPUSimulation()
 {
 //  std::cout << NUM_IRON_PARTICLES << std::endl;
 //  std::cout << NUM_SILICATE_PARTICLES << std::endl;
+}
+
+void GPUSimulation::init()
+{
+  NUM_PARTICLES = (NUM_SILICATE_PARTICLES+NUM_IRON_PARTICLES) * 2 ;
     std::shared_ptr<Planet> planetA = std::make_shared<Planet>(glm::vec4(Xcenter, 0.0, Zxenter, 1.0), glm::vec3(Vinitx, 0, 0), glm::vec3(0, 3.0973, 0), NUM_IRON_PARTICLES, NUM_SILICATE_PARTICLES);
     std::shared_ptr<Planet> planetB = std::make_shared<Planet>(glm::vec4(-Xcenter, 0.0, -Zxenter, 1.0), glm::vec3(-Vinitx, 0, 0), glm::vec3(0, -3.0973, 0), NUM_IRON_PARTICLES, NUM_SILICATE_PARTICLES);
 
@@ -182,11 +187,8 @@ GPUSimulation::GPUSimulation()
     dt = 0.001f;
     gpu_calculating_time =0.;
     count =0;
-        // printf("NUM_PARTICLES: %d, NUM_ITERATIONS: %d, BLOCK_SIZE: %d, dt: %.5f\n", NUM_PARTICLES, NUM_ITERATIONS, BLOCK_SIZE, dt);
-}
+    printf("NUM_PARTICLES: %d, NUM_ITERATIONS: %d, BLOCK_SIZE: %d, dt: %.5f\n", NUM_PARTICLES, NUM_ITERATIONS, BLOCK_SIZE, dt);
 
-void GPUSimulation::init()
-{
   //NUM_PARTICLES = (NUM_SILICATE_PARTICLES+NUM_IRON_PARTICLES) * 2 ;
   //cudaMalloc( &d_p, (NUM_SILICATE_PARTICLES+NUM_IRON_PARTICLES)*2 * sizeof(Particle));
   // cudaMalloc( &d_pB, (NUM_SILICATE_PARTICLES+NUM_IRON_PARTICLES) * sizeof(Particle));
@@ -237,7 +239,7 @@ void GPUSimulation::update(cudaGraphicsResource_t &ssbo_handle)
 
   float milliseconds = 0;
 cudaEventElapsedTime(&milliseconds, start, stop);
-  std::cout << "CUDA time spent: " << milliseconds << "ms" << std::endl;
+  std::cout << "CUDA " << milliseconds << " ms" << std::endl;
   count++;
 }
 
