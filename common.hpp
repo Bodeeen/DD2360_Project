@@ -15,8 +15,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <vector>
 
-#define NUM_SILICATE_PARTICLES 6000
-#define NUM_IRON_PARTICLES 9000
+#define NUM_SILICATE_PARTICLES 1500
+#define NUM_IRON_PARTICLES 1000
 
 #define PATH_MAX    4096
 #define GL_SUCCESS  0
@@ -46,7 +46,7 @@
 #define time_step 5.8117
 
 #define NUM_ITERATIONS 1000000LL
-#define BLOCK_SIZE 256
+#define BLOCK_SIZE 128
 
 #define RImpactor 6371.0f
 #define RInnershell 3185.5f
@@ -62,12 +62,5 @@ typedef struct{
         unsigned int material; //True is iron
         float __padding[3];
 } Particle;
-
-typedef struct{
-        glm::vec4 position;
-        glm::vec4 velocity;
-        unsigned int material; //True is iron
-        float __padding[3];
-} Particle_vec4;
 
 #endif

@@ -157,13 +157,90 @@ __host__ __device__ void update_particle(int idx, Particle *particles, float dt,
   //return p.position + dt * p.velocity;
 }
 
+__device__ glm::vec4 tile_calculation(Particle myParticle)
+{
+int i;
+__shared__ Particle shParticle[BLOCK_SIZE];
+float fscale;
+glm::vec4 f_vec = glm::vec4(0.0);
+glm::vec4 direction;
+
+for (i = 0; i < blockDim.x; i++) {
+ fscale = fscale + calculate_force(myParticle, shParticle[i]);
+ direction = glm::normalize(myParticle.position - shParticle[i].position);
+ f_vec += direction * fscale;
+}
+return f_vec;
+}
+
+// __global__ void
+// calculate_forces(void *devX, void *devA)
+// {
+//   extern __shared__ float4[] shPosition;
+//   float4 *globalX = (float4 *)devX;
+//   float4 *globalA = (float4 *)devA;
+//   float4 myPosition;
+//   int i, tile;
+//   float3 acc = {0.0f, 0.0f, 0.0f};
+//   int gtid = blockIdx.x * blockDim.x + threadIdx.x;
+//   myPosition = globalX[gtid];
+//   for (i = 0, tile = 0; i < N; i += p, tile++) {
+//     int idx = tile * blockDim.x + threadIdx.x;
+//     shPosition[threadIdx.x] = globalX[idx];
+//     __syncthreads();
+//     acc = tile_calculation(myPosition, acc);
+//     __syncthreads();
+//   }
+//   // Save the result in global memory for the integration step.
+//   float4 acc4 = {acc.x, acc.y, acc.z, 0.0f};
+//   globalA[gtid] = acc4;
+// }
+
+__global__ void simulation_GPU_tiled(Particle *particles, int N, float dt, int p)
+{
+  __shared__ Particle shParticle[BLOCK_SIZE];
+  Particle myParticle;
+  int i, tile;
+  glm::vec4 f_vec = glm::vec4(0.0);
+  glm::vec4 a = glm::vec4(0.0);
+
+  const int gtid = blockIdx.x * blockDim.x + threadIdx.x;
+  myParticle = particles[gtid];
+  // printf("Idx = %d\n", threadIdx.x);
+  __syncthreads();
+  // printf("%f\n", shParticle[threadIdx.x].position.x);
+  for (i = 0, tile = 0; i < N; i += p, tile++) {
+    int idx = tile * blockDim.x + threadIdx.x;
+    // printf("Idx = %d\n", idx);
+    shParticle[threadIdx.x] = particles[idx];
+    __syncthreads();
+    f_vec = f_vec + tile_calculation(myParticle);
+    __syncthreads();
+  }
+
+  if(particles[gtid].material)
+    a = (1/(float)M_Fe)*f_vec;
+  else
+    a = (1/(float)M_Si)*f_vec;
+  // printf("%f, %f, %f, %f\n", a.x, a.y, a.z, a.w);
+  myParticle.velocity += a*dt;
+  myParticle.position += dt * myParticle.velocity;
+  particles[gtid] = myParticle;
+}
+
+
 __global__ void simulation_GPU(Particle *particles, int n, float dt)
 {
-        const int i = blockIdx.x*blockDim.x + threadIdx.x;
+  // const int s_idx = threadIdx.x;
+  // __shared__ int s_prod[];
+  // s_prod[s_idx] = 10;
+  // __syncthreads();
 
-        if(i<n){
-          update_particle(i, particles, dt, n);
-        }
+  const int i = blockIdx.x*blockDim.x + threadIdx.x;
+
+  if(i<n){
+    update_particle(i, particles, dt, n);
+  }
 }
 
 GPUSimulation::GPUSimulation()
@@ -221,23 +298,19 @@ void GPUSimulation::update(cudaGraphicsResource_t &ssbo_handle)
   cudaGraphicsResourceGetMappedPointer((void **)&d_p, &t, ssbo_handle);
   cudaEventRecord(start);
   //allDevice = all;
-  simulation_GPU<<<(NUM_PARTICLES + BLOCK_SIZE - 1)/BLOCK_SIZE, BLOCK_SIZE>>>(d_p, NUM_PARTICLES, dt);
+  simulation_GPU_tiled<<<(NUM_PARTICLES + BLOCK_SIZE - 1)/BLOCK_SIZE, BLOCK_SIZE>>>(d_p, NUM_PARTICLES, dt, BLOCK_SIZE);
   //all = allDevice;
-  // for(auto &particle : all) {
-  //   std::cout << particle.position.x << " " << particle.position.y << " " << particle.position.z << std::endl;
-  // }
-  //exit(1);
   cudaEventRecord(stop);
   cudaGraphicsUnmapResources(1, &ssbo_handle);
 
   cudaEventSynchronize(stop);
 
-  //cudaMemcpy( &all[0], d_p, NUM_PARTICLES * sizeof(Particle), cudaMemcpyDeviceToHost );
+  cudaMemcpy( &all[0], d_p, NUM_PARTICLES * sizeof(Particle), cudaMemcpyDeviceToHost );
   checkCUDAError();
 
-  float milliseconds = 0;
-cudaEventElapsedTime(&milliseconds, start, stop);
-  std::cout << "CUDA time spent: " << milliseconds << "ms" << std::endl;
+  // float milliseconds = 0;
+  //cudaEventElapsedTime(&milliseconds, start, stop);
+  //std::cout << "CUDA time spent: " << milliseconds << "ms" << std::endl;
   count++;
 }
 

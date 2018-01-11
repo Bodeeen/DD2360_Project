@@ -138,10 +138,10 @@ void display()
   // glDrawArrays(GL_TRIANGLES, 0, 3); // Starting from vertex 0; 3 vertices total -> 1 triangle
   glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, ssbo_pos);
   timeval a, b;
-  gettimeofday(&a, NULL);
+  // gettimeofday(&a, NULL);
   glDrawElementsInstanced(GL_TRIANGLES, 3, GL_UNSIGNED_SHORT, NULL, num_particles);
-  gettimeofday(&b, NULL);
-  std::cout << "OpenGL Rendering: " << getElapsed(a, b) << "s" << std::endl;
+  // gettimeofday(&b, NULL);
+  // std::cout << "OpenGL Rendering: " << getElapsed(a, b) << "s" << std::endl;
   glDisableVertexAttribArray(0);
 
   // for(auto &particle : simulator.all) {
@@ -219,14 +219,14 @@ void processKeys(unsigned char key, int x, int y) {
     throw "exit";
     break;
     case '-': {
-      camera.z--;
+      camera.z = camera.z + 100;
       glm::mat4 view = glm::lookAt(camera, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
       unsigned int viewLoc = glGetUniformLocation(shaderProgram, "view");
       glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
 
     } break;
     case '+': {
-      camera.z++;
+      camera.z = camera.z - 100;
       glm::mat4 view = glm::lookAt(camera, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
       unsigned int viewLoc = glGetUniformLocation(shaderProgram, "view");
       glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
